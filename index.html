@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+    <meta charset="UTF-8">
+    <title>Dhakhtarka - CareQueue</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <h1>Bukaanka Hadda Sugaya</h1>
+    <div id="patient-data">
+        <p>Sugitaanka xogta...</p>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://carequeue-manager-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        
+        // Halkan waxaan ku dhegeysanaynaa xogta laga soo diray Reception
+        firebase.database().ref('live_queue').on('value', (snapshot) => {
+            const data = snapshot.val();
+            const display = document.getElementById('patient-data');
+            
+            if (data) {
+                display.innerHTML = `
+                    <h3>Magaca: ${data.name}</h3>
+                    <p>Tikidh: ${data.num}</p>
+                    <p>Qolka: ${data.room}</p>
+                    <p>Cabashada: ${data.complaint}</p>
+                `;
+            } else {
+                display.innerHTML = "<p>Ma jiro bukaan hadda sugaya.</p>";
+            }
+        });
+    </script>
+</body>
+</html>
