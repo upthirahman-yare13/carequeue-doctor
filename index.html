@@ -1,34 +1,75 @@
-<div class="card">
-    <h3>Magaca: ${data.name}</h3>
-    <p><strong>Cabashada:</strong> ${data.complaint}</p>
-    
-    <textarea id="medication" placeholder="Daawooyinka loo qoray..." rows="2" style="width:100%;"></textarea>
-    <textarea id="labTest" placeholder="Baaritaanka Shaybaarka..." rows="2" style="width:100%;"></textarea>
-    
-    <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button onclick="sendToPharmacy()" style="background: green; color: white; border: none; padding: 10px; flex: 1;">U dir Farmashiyaha</button>
-        <button onclick="sendToLab()" style="background: orange; color: white; border: none; padding: 10px; flex: 1;">U dir Shaybaarka</button>
+<!DOCTYPE html>
+<html lang="so">
+<head>
+    <meta charset="UTF-8">
+    <title>CareQueue | Dhakhtarka</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', sans-serif; padding: 20px; color: #1e293b; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-width: 500px; margin: auto; border-left: 5px solid #2563eb; }
+        h2 { text-align: center; }
+        textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-pharm { background: #16a34a; color: white; border: none; padding: 12px; flex: 1; cursor: pointer; border-radius: 6px; }
+        .btn-lab { background: #ea580c; color: white; border: none; padding: 12px; flex: 1; cursor: pointer; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <h2>Bukaanka Hadda Sugaya</h2>
+    <div id="doctor-view" class="card">
+        <p>Waxaa la sugayaa bukaan...</p>
     </div>
-</div>
 
-<script>
-    // Reception-ka ka saar, laakiin xogta u dir meesha ku habboon
-    function sendToPharmacy() {
-        const med = document.getElementById('medication').value;
-        const pName = document.getElementById('pName').value; // Sidoo kale kasoo qaad magaca
-        if(med) {
-            db.ref('pharmacy_queue').push({ name: '${data.name}', prescription: med });
-            db.ref('live_queue').remove();
-            alert("Farmashiyaha ayaa loo diray!");
-        }
-    }
+    <script>
+        const firebaseConfig = { databaseURL: "https://carequeue-manager-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-    function sendToLab() {
-        const lab = document.getElementById('labTest').value;
-        if(lab) {
-            db.ref('lab_queue').push({ name: '${data.name}', test: lab });
-            db.ref('live_queue').remove();
-            alert("Shaybaarka ayaa loo diray!");
+        db.ref('live_queue').on('value', (snap) => {
+            const data = snap.val();
+            const view = document.getElementById('doctor-view');
+            
+            if (data) {
+                view.innerHTML = `
+                    <h3>Magaca: <span id="pName">${data.name}</span></h3>
+                    <p><strong>Tikidh:</strong> ${data.num}</p>
+                    <p><strong>Cabashada:</strong> ${data.complaint}</p>
+                    <p><strong>Qolka:</strong> ${data.room}</p>
+                    
+                    <textarea id="medication" placeholder="Daawooyinka loo qoray..." rows="2"></textarea>
+                    <textarea id="labTest" placeholder="Baaritaanka Shaybaarka..." rows="2"></textarea>
+                    
+                    <div class="btn-group">
+                        <button class="btn-pharm" onclick="sendToPharmacy()">U dir Farmashiyaha</button>
+                        <button class="btn-lab" onclick="sendToLab()">U dir Shaybaarka</button>
+                    </div>
+                `;
+            } else {
+                view.innerHTML = "<p>Ma jiro bukaan hadda sugaya.</p>";
+            }
+        });
+
+        function sendToPharmacy() {
+            const med = document.getElementById('medication').value;
+            const name = document.getElementById('pName').innerText;
+            if(med) {
+                db.ref('pharmacy_queue').push({ name: name, prescription: med });
+                db.ref('live_queue').remove();
+                alert("Bukaanka waxaa loo diray Farmashiyaha!");
+            } else { alert("Fadlan qor daawo!"); }
         }
-    }
-</script>
+
+        function sendToLab() {
+            const lab = document.getElementById('labTest').value;
+            const name = document.getElementById('pName').innerText;
+            if(lab) {
+                db.ref('lab_queue').push({ name: name, test: lab });
+                db.ref('live_queue').remove();
+                alert("Bukaanka waxaa loo diray Shaybaarka!");
+            } else { alert("Fadlan qor baaritaanka!"); }
+        }
+    </script>
+</body>
+</html>
