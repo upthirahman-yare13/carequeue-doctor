@@ -2,23 +2,79 @@
 <html lang="so">
 <head>
     <meta charset="UTF-8">
-    <title>CareQueue | Dhakhtarka</title>
+    <title>CareQueue | Dhakhtarka - Prescription</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { background-color: #f8fafc; font-family: 'Segoe UI', sans-serif; padding: 20px; color: #1e293b; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-width: 500px; margin: auto; border-left: 5px solid #2563eb; }
-        textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-pharm { background: #16a34a; color: white; border: none; padding: 12px; flex: 1; cursor: pointer; border-radius: 6px; }
-        .btn-lab { background: #ea580c; color: white; border: none; padding: 12px; flex: 1; cursor: pointer; border-radius: 6px; }
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', sans-serif; padding: 20px; color: #1e293b; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 700px; margin: auto; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        h2 { text-align: center; color: #2563eb; }
+        
+        /* Qaybta Print-ga oo kaliya u muuqanaysa warqadda */
+        #prescription-print { display: none; padding: 40px; border: 2px solid #000; background: white; color: black; }
+        .header-print { text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px; }
+        
+        .btn-print { background: #000; color: white; padding: 15px; width: 100%; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #prescription-print, #prescription-print * { visibility: visible; }
+            #prescription-print { display: block; position: absolute; left: 0; top: 0; width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <h2>Bukaanka Hadda Sugaya</h2>
-    <div id="doctor-view" class="card">
-        <p>Loading...</p>
+    <div class="card" id="doctor-form">
+        <h2>BAARITAANKA BUKAANKA</h2>
+        <div id="patient-info-display" style="background: #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+            <p>Sugaya bukaan...</p>
+        </div>
+
+        <div class="grid-inputs">
+            <input type="number" id="pAge" placeholder="Da'da (Age)">
+            <input type="text" id="pSex" placeholder="Lab/Dheddig (Gender)">
+            <input type="text" id="pWeight" placeholder="Miisaanka (Weight)">
+            <input type="text" id="pBP" placeholder="Dhiig karka (B.P)">
+        </div>
+        
+        <textarea id="pDiagnosis" placeholder="Cudurka la helay (Diagnosis)..." rows="2"></textarea>
+        <textarea id="pMedication" placeholder="Daawooyinka loo qoray (Prescription)..." rows="4"></textarea>
+        <textarea id="pNote" placeholder="Talooyinka dhakhtarka (Doctor's Advice)..." rows="2"></textarea>
+        
+        <button class="btn-print" onclick="preparePrint()">PRINT & DHAMMAYSTIR</button>
+    </div>
+
+    <div id="prescription-print">
+        <div class="header-print">
+            <h1>CAREQUEUE MEDICAL CENTER</h1>
+            <p>Mogadishu, Somalia | Tel: +252 61XXXXXXX</p>
+            <h3>MEDICAL PRESCRIPTION</h3>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <p><strong>Bukaanka:</strong> <span id="printName"></span></p>
+            <p><strong>Taariikhda:</strong> <span id="printDate"></span></p>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr;">
+            <p><strong>Da'da:</strong> <span id="printAge"></span></p>
+            <p><strong>Jinsiga:</strong> <span id="printSex"></span></p>
+            <p><strong>Miisaanka:</strong> <span id="printWeight"></span></p>
+        </div>
+        <hr>
+        <h4>DIAGNOSIS:</h4>
+        <p id="printDiagnosis"></p>
+        <hr>
+        <h4>PRESCRIPTION (Rx):</h4>
+        <p id="printMedication" style="white-space: pre-wrap; font-size: 18px; line-height: 1.6;"></p>
+        <hr>
+        <h4>ADVICE:</h4>
+        <p id="printNote"></p>
+        <div style="margin-top: 50px; text-align: right;">
+            <p>_______________________</p>
+            <p>Dhakhtarka Saxiixiisa</p>
+        </div>
     </div>
 
     <script>
@@ -26,53 +82,60 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Dhagaysiga xogta bukaanada sugaya
+        let currentPatientKey = null;
+        let currentPatientData = null;
+
+        // 1. Soo kicinta Bukaanka u horeeya ee Safka
         db.ref('live_queue').on('value', (snap) => {
             const data = snap.val();
-            const view = document.getElementById('doctor-view');
-            
+            const display = document.getElementById('patient-info-display');
             if (data) {
-                // Qaadashada key-ga bukaanka koowaad
-                const key = Object.keys(data)[0];
-                const patient = data[key];
-
-                view.innerHTML = `
-                    <h3>Magaca: <span id="pName">${patient.name}</span></h3>
-                    <p><strong>Cabashada:</strong> <span id="pComplaint">${patient.complaint}</span></p>
-                    <textarea id="medication" placeholder="Daawooyinka loo qoray..." rows="2"></textarea>
-                    <textarea id="labTest" placeholder="Baaritaanka Shaybaarka..." rows="2"></textarea>
-                    <div class="btn-group">
-                        <button class="btn-pharm" onclick="sendToPharmacy('${key}')">U dir Farmashiyaha</button>
-                        <button class="btn-lab" onclick="sendToLab('${key}')">U dir Shaybaarka</button>
-                    </div>
-                `;
+                currentPatientKey = Object.keys(data)[0];
+                currentPatientData = data[currentPatientKey];
+                display.innerHTML = `<strong>Bukaanka hadda:</strong> ${currentPatientData.name} | <strong>Cabashada:</strong> ${currentPatientData.complaint}`;
             } else {
-                view.innerHTML = "<p>Ma jiro bukaan hadda sugaya.</p>";
+                display.innerHTML = "Ma jiro bukaan hadda sugaya.";
+                currentPatientKey = null;
             }
         });
 
-        function sendToPharmacy(key) {
-            const med = document.getElementById('medication').value;
-            const name = document.getElementById('pName').innerText;
-            const complaint = document.getElementById('pComplaint').innerText;
-            
-            if(med) {
-                db.ref('pharmacy_queue').push({ name, complaint, prescription: med, time: new Date().toLocaleTimeString() });
-                db.ref('live_queue/' + key).remove(); // Tirtir bukaan gaar ah
-                alert("Bukaanka waxaa loo diray Farmashiyaha!");
-            } else { alert("Fadlan qor daawo!"); }
-        }
+        // 2. Diyaarinta Print-ga iyo Kaydinta
+        function preparePrint() {
+            if (!currentPatientKey) { alert("Ma jiro bukaan la doortay!"); return; }
 
-        function sendToLab(key) {
-            const lab = document.getElementById('labTest').value;
-            const name = document.getElementById('pName').innerText;
-            const complaint = document.getElementById('pComplaint').innerText;
+            const age = document.getElementById('pAge').value;
+            const diagnosis = document.getElementById('pDiagnosis').value;
+            const meds = document.getElementById('pMedication').value;
+
+            if (!age || !meds) { alert("Fadlan buuxi Da'da iyo Daawooyinka!"); return; }
+
+            // Buuxi xogta warqadda print-ga
+            document.getElementById('printName').innerText = currentPatientData.name;
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString();
+            document.getElementById('printAge').innerText = age;
+            document.getElementById('printSex').innerText = document.getElementById('pSex').value;
+            document.getElementById('printWeight').innerText = document.getElementById('pWeight').value;
+            document.getElementById('printDiagnosis').innerText = diagnosis;
+            document.getElementById('printMedication').innerText = meds;
+            document.getElementById('printNote').innerText = document.getElementById('pNote').value;
+
+            // Kaydi History-ga dhammaystiran (Halkan xogtu dakhli ahaan iyo taariikh ahaanba u galaysaa)
+            db.ref('patient_history').push({
+                name: currentPatientData.name,
+                age: age,
+                diagnosis: diagnosis,
+                medication: meds,
+                date: new Date().toLocaleDateString()
+            });
+
+            // Ka saar safka 'live_queue' maadaama uu dhammaaday
+            db.ref('live_queue/' + currentPatientKey).remove();
+
+            // Fur daaqadda Print-ga
+            window.print();
             
-            if(lab) {
-                db.ref('lab_queue').push({ name, complaint, test: lab, time: new Date().toLocaleTimeString() });
-                db.ref('live_queue/' + key).remove(); // Tirtir bukaan gaar ah
-                alert("Bukaanka waxaa loo diray Shaybaarka!");
-            } else { alert("Fadlan qor baaritaanka!"); }
+            // Nadiifi foomka ka dib print-ga
+            location.reload();
         }
     </script>
 </body>
