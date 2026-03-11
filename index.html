@@ -18,7 +18,7 @@
 
     <h2>Bukaanka Hadda Sugaya</h2>
     <div id="doctor-view" class="card">
-        <p>Waxaa la sugayaa bukaan...</p>
+        <p>Loading...</p>
     </div>
 
     <script>
@@ -26,19 +26,24 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // Dhagaysiga xogta bukaanada sugaya
         db.ref('live_queue').on('value', (snap) => {
             const data = snap.val();
             const view = document.getElementById('doctor-view');
             
             if (data) {
+                // Qaadashada key-ga bukaanka koowaad
+                const key = Object.keys(data)[0];
+                const patient = data[key];
+
                 view.innerHTML = `
-                    <h3>Magaca: <span id="pName">${data.name}</span></h3>
-                    <p><strong>Cabashada:</strong> <span id="pComplaint">${data.complaint}</span></p>
+                    <h3>Magaca: <span id="pName">${patient.name}</span></h3>
+                    <p><strong>Cabashada:</strong> <span id="pComplaint">${patient.complaint}</span></p>
                     <textarea id="medication" placeholder="Daawooyinka loo qoray..." rows="2"></textarea>
                     <textarea id="labTest" placeholder="Baaritaanka Shaybaarka..." rows="2"></textarea>
                     <div class="btn-group">
-                        <button class="btn-pharm" onclick="sendToPharmacy()">U dir Farmashiyaha</button>
-                        <button class="btn-lab" onclick="sendToLab()">U dir Shaybaarka</button>
+                        <button class="btn-pharm" onclick="sendToPharmacy('${key}')">U dir Farmashiyaha</button>
+                        <button class="btn-lab" onclick="sendToLab('${key}')">U dir Shaybaarka</button>
                     </div>
                 `;
             } else {
@@ -46,24 +51,26 @@
             }
         });
 
-        function sendToPharmacy() {
+        function sendToPharmacy(key) {
             const med = document.getElementById('medication').value;
             const name = document.getElementById('pName').innerText;
             const complaint = document.getElementById('pComplaint').innerText;
+            
             if(med) {
                 db.ref('pharmacy_queue').push({ name, complaint, prescription: med, time: new Date().toLocaleTimeString() });
-                db.ref('live_queue').remove();
+                db.ref('live_queue/' + key).remove(); // Tirtir bukaan gaar ah
                 alert("Bukaanka waxaa loo diray Farmashiyaha!");
             } else { alert("Fadlan qor daawo!"); }
         }
 
-        function sendToLab() {
+        function sendToLab(key) {
             const lab = document.getElementById('labTest').value;
             const name = document.getElementById('pName').innerText;
             const complaint = document.getElementById('pComplaint').innerText;
+            
             if(lab) {
                 db.ref('lab_queue').push({ name, complaint, test: lab, time: new Date().toLocaleTimeString() });
-                db.ref('live_queue').remove();
+                db.ref('live_queue/' + key).remove(); // Tirtir bukaan gaar ah
                 alert("Bukaanka waxaa loo diray Shaybaarka!");
             } else { alert("Fadlan qor baaritaanka!"); }
         }
