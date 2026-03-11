@@ -112,37 +112,43 @@
         </div>
     </div>
 
-    <script>
-        const firebaseConfig = { databaseURL: "https://carequeue-manager-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(firebaseConfig);
+<script>
+        const firebaseConfig = { 
+            databaseURL: "https://carequeue-manager-default-rtdb.firebaseio.com",
+            projectId: "carequeue-manager"
+        };
+        // Hubi in aadan laba jeer initialize gareynin haddii aad hal fayl ka dhigato
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.database();
 
-        let activeKey = null;
-        let activeData = null;
-
-        // Soo akhrinta bukaanka safka ku jira
+        // Soo akhrinta bukaanka safka ku jira (Waa inuu la jaanqaadaa .set() ee Reception-ka)
         db.ref('live_queue').on('value', (snap) => {
             const data = snap.val();
             const div = document.getElementById('active-patient');
+            
             if (data) {
-                activeKey = Object.keys(data)[0];
-                activeData = data[activeKey];
-                div.innerHTML = "BUKAANKA: " + activeData.name + " (Tikidh: " + (activeData.num || 'N/A') + ")";
+                // Maadaama Reception-ku isticmaalay .set(), data-da waxay si toos ah u noqoneysaa object
+                activeData = data; 
+                div.innerHTML = "BUKAANKA: " + activeData.name + " (Tikidh: " + (activeData.num || 'N/A') + ") - Qolka: " + (activeData.room || 'N/A');
+                div.style.background = "#dcfce7";
             } else {
                 div.innerHTML = "Ma jiro bukaan hadda sugaya.";
-                activeKey = null;
+                div.style.background = "#fee2e2";
+                activeData = null;
             }
         });
 
         function generateReport() {
-            if (!activeKey) { alert("Fadlan sug inta bukaan laga soo dirayo Reception-ka!"); return; }
+            if (!activeData) { alert("Fadlan sug inta bukaan laga soo dirayo Reception-ka!"); return; }
 
             const meds = document.getElementById('pMedication').value;
             if (!meds) { alert("Fadlan qor daawooyinka bukaanka!"); return; }
 
             // Ku shub xogta warqadda Print-ga
             document.getElementById('prName').innerText = activeData.name;
-            document.getElementById('prRef').innerText = "CQ-" + Math.floor(Math.random() * 9000 + 1000);
+            document.getElementById('prRef').innerText = "CQ-" + (activeData.num || "000");
             document.getElementById('prDate').innerText = new Date().toLocaleString();
             document.getElementById('prAgeSex').innerText = document.getElementById('pAge').value + " / " + document.getElementById('pSex').value;
             document.getElementById('prWeight').innerText = document.getElementById('pWeight').value + " kg";
@@ -164,8 +170,8 @@
                 guardian: document.getElementById('gName').value
             });
 
-            // Ka saar safka
-            db.ref('live_queue/' + activeKey).remove();
+            // Ka saar safka (Tirtir xogta la diiwaangeliyey)
+            db.ref('live_queue').remove();
 
             // Print
             window.print();
@@ -173,6 +179,7 @@
             // Reload si loo diyaariyo bukaanka xiga
             setTimeout(() => { location.reload(); }, 1000);
         }
+</script>        }
     </script>
 </body>
 </html>
