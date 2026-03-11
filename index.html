@@ -2,38 +2,62 @@
 <html lang="so">
 <head>
     <meta charset="UTF-8">
-    <title>Dhakhtarka - CareQueue</title>
+    <title>CareQueue | Dhakhtarka</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: auto;
+            border-left: 5px solid #2563eb;
+            color: #1e293b;
+        }
+        h2 { text-align: center; color: #1e293b; }
+        h3 { margin-top: 0; color: #2563eb; }
+        p { color: #475569; line-height: 1.6; font-size: 16px; }
+        .btn-done { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 15px; }
+    </style>
 </head>
 <body>
-    <h1>Bukaanka Hadda Sugaya</h1>
-    <div id="patient-data">
-        <p>Sugitaanka xogta...</p>
+
+    <h2>Bukaanka Hadda Sugaya</h2>
+    <div id="doctor-view" class="card">
+        <p>Waxaa la sugayaa bukaan...</p>
     </div>
 
     <script>
-        const firebaseConfig = {
+        const firebaseConfig = { 
             databaseURL: "https://carequeue-manager-default-rtdb.firebaseio.com"
         };
         firebase.initializeApp(firebaseConfig);
-        
-        // Halkan waxaan ku dhegeysanaynaa xogta laga soo diray Reception
-        firebase.database().ref('live_queue').on('value', (snapshot) => {
-            const data = snapshot.val();
-            const display = document.getElementById('patient-data');
+        const db = firebase.database();
+
+        db.ref('live_queue').on('value', (snap) => {
+            const data = snap.val();
+            const view = document.getElementById('doctor-view');
             
             if (data) {
-                display.innerHTML = `
+                view.innerHTML = `
                     <h3>Magaca: ${data.name}</h3>
-                    <p>Tikidh: ${data.num}</p>
-                    <p>Qolka: ${data.room}</p>
-                    <p>Cabashada: ${data.complaint}</p>
+                    <p><strong>Tikidh:</strong> ${data.num}</p>
+                    <p><strong>Cabashada:</strong> ${data.complaint || "Ma jiro"}</p>
+                    <p><strong>Qolka:</strong> ${data.room}</p>
+                    <button class="btn-done" onclick="clearPatient()">Dhammaystir</button>
                 `;
             } else {
-                display.innerHTML = "<p>Ma jiro bukaan hadda sugaya.</p>";
+                view.innerHTML = "<p>Ma jiro bukaan hadda sugaya.</p>";
             }
         });
+
+        function clearPatient() {
+            db.ref('live_queue').remove();
+            alert("Bukaankii waa laga saaray liiska!");
+        }
     </script>
 </body>
 </html>
