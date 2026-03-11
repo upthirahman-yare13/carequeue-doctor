@@ -35,7 +35,7 @@
                 view.innerHTML = `
                     <h3>Magaca: <span id="pName">${data.name}</span></h3>
                     <p><strong>Tikidh:</strong> ${data.num}</p>
-                    <p><strong>Cabashada:</strong> ${data.complaint}</p>
+                    <p><strong>Cabashada:</strong> <span id="pComplaint">${data.complaint}</span></p>
                     <p><strong>Qolka:</strong> ${data.room}</p>
                     
                     <textarea id="medication" placeholder="Daawooyinka loo qoray..." rows="2"></textarea>
@@ -52,20 +52,34 @@
         });
 
         function sendToPharmacy() {
-            const med = document.getElementById('medication').value;
             const name = document.getElementById('pName').innerText;
+            const complaint = document.getElementById('pComplaint').innerText;
+            const med = document.getElementById('medication').value;
+
             if(med) {
-                db.ref('pharmacy_queue').push({ name: name, prescription: med });
+                db.ref('pharmacy_queue').push({ 
+                    name: name, 
+                    complaint: complaint,
+                    prescription: med,
+                    time: new Date().toLocaleTimeString() 
+                });
                 db.ref('live_queue').remove();
                 alert("Bukaanka waxaa loo diray Farmashiyaha!");
             } else { alert("Fadlan qor daawo!"); }
         }
 
         function sendToLab() {
-            const lab = document.getElementById('labTest').value;
             const name = document.getElementById('pName').innerText;
+            const complaint = document.getElementById('pComplaint').innerText;
+            const lab = document.getElementById('labTest').value;
+
             if(lab) {
-                db.ref('lab_queue').push({ name: name, test: lab });
+                db.ref('lab_queue').push({ 
+                    name: name, 
+                    complaint: complaint,
+                    test: lab,
+                    time: new Date().toLocaleTimeString() 
+                });
                 db.ref('live_queue').remove();
                 alert("Bukaanka waxaa loo diray Shaybaarka!");
             } else { alert("Fadlan qor baaritaanka!"); }
