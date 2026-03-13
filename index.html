@@ -266,29 +266,4 @@
         transform: translateY(-2px);
         box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.5);
     }
-        </style>
-    async function callNextPatient() {
-    // 1. Hel qofka ugu horeeya ee "waiting" ah (ugu ticket yar)
-    const nextRef = db.collection("patients")
-                      .where("status", "==", "waiting")
-                      .orderBy("ticket_number", "asc")
-                      .limit(1);
-
-    const snapshot = await nextRef.get();
-    
-    if (!snapshot.empty) {
-        const patient = snapshot.docs[0];
-        const patientData = patient.data();
-
-        // 2. U cusboonaysii TV-ga (Real-time update)
-        db.collection("tv_display").doc("current_call").set({
-            name: patientData.name,
-            ticket: patientData.ticket_number,
-            room: "14",
-            doctor: "Dr. Ahmed"
-        });
-
-        // 3. U beddel status-ka bukaanka "in-progress"
-        db.collection("patients").doc(patient.id).update({ status: "in-progress" });
-    }
-}
+            </style>
